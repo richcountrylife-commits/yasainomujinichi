@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>野菜直売所 売上管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','YuGothic','Yu Gothic',sans-serif;color:#3D3D3D;background:#FFF8F0;min-height:100vh}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:#fff;border:1px solid #F0D9C0;border-radius:16px;padding:40px 32px;text-align:center;max-width:320px;width:100%}
+.login-box h2{font-size:20px;font-weight:700;color:#D97B30;margin-bottom:6px}
+.login-box p{font-size:13px;color:#888;margin-bottom:24px}
+.login-input{font-size:24px;letter-spacing:8px;text-align:center;padding:12px;border:2px solid #E0C8A8;border-radius:10px;width:100%;margin-bottom:12px;font-family:inherit}
+.login-input:focus{outline:none;border-color:#F5A84E}
+.login-btn{width:100%;padding:12px;background:#F5A84E;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.login-err{font-size:13px;color:#A32D2D;margin-top:10px;display:none}
+#main-app{display:none}
+.app{max-width:680px;margin:0 auto;padding:0 0 80px}
+header{background:#F5A84E;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+header h1{font-size:17px;font-weight:700;color:#fff}
+header .date-now{font-size:12px;color:rgba(255,255,255,0.85)}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #F0D9C0;position:sticky;top:52px;z-index:99}
+.tab{flex:1;padding:10px 4px;font-size:13px;cursor:pointer;border:none;background:none;color:#888;border-bottom:3px solid transparent;font-family:inherit;font-weight:500;transition:all .15s}
+.tab.active{color:#D97B30;border-bottom-color:#F5A84E}
+.content{padding:12px}
+.card{background:#fff;border:1px solid #F0D9C0;border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.card-title{font-size:12px;font-weight:700;color:#B35F00;margin-bottom:10px;letter-spacing:0.05em}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.metric{background:#fff;border:1px solid #F0D9C0;border-radius:10px;padding:10px 8px;text-align:center}
+.metric-label{font-size:11px;color:#888;margin-bottom:4px;line-height:1.3}
+.metric-value{font-size:19px;font-weight:700;line-height:1}
+.metric-sub{font-size:10px;color:#aaa;margin-top:3px}
+.green{color:#3B6D11}.red{color:#A32D2D}.amber{color:#854F0B}
+input[type=text],input[type=number],input[type=date],select{font-size:15px;padding:8px 10px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;width:100%;font-family:inherit;-webkit-appearance:none}
+input:focus,select:focus{outline:none;border-color:#F5A84E}
+.btn{padding:10px 16px;font-size:14px;font-weight:600;border:1px solid #E0C8A8;border-radius:8px;cursor:pointer;background:#fff;color:#3D3D3D;font-family:inherit;transition:all .15s}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:#F5A84E;color:#fff;border-color:#F5A84E}
+.btn-sheets{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.btn-sm{padding:6px 12px;font-size:13px}
+.item-header{display:grid;grid-template-columns:1fr 70px 70px 70px 36px;gap:4px;padding:4px 0 8px;font-size:11px;color:#888;border-bottom:1px solid #F0D9C0}
+.item-header span{text-align:center}.item-header span:first-child{text-align:left}
+.item-row{display:grid;grid-template-columns:1fr 70px 70px 70px 36px;gap:4px;align-items:center;padding:6px 0;border-bottom:1px solid #FEF3E7}
+.item-row input{font-size:13px;padding:5px 4px;text-align:center}
+.add-row{display:grid;grid-template-columns:1fr 70px 70px 70px 36px;gap:4px;align-items:center;padding:10px 0 0}
+.add-row input{font-size:13px;padding:5px 4px}
+.del-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:20px;padding:0;line-height:1}
+.coin-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.coin-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.coin-label{font-size:10px;color:#888;font-weight:600}
+.coin-sub{font-size:10px;color:#B35F00;font-weight:500}
+.cash-total-row{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #F0D9C0}
+.toggle-row{display:flex;align-items:center;gap:10px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#ddd;border-radius:999px;cursor:pointer;transition:.2s}
+.slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.slider{background:#F5A84E}
+input:checked+.slider:before{transform:translateX(20px)}
+.skip-notice{background:#FEF3E7;border:1px solid #F5A84E;border-radius:8px;padding:10px 12px;font-size:13px;color:#854F0B;margin-bottom:10px;display:none}
+.auth-bar{background:#E8F4FD;border:1px solid #AECBFA;border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.auth-dot{width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0}
+.auth-dot.ok{background:#3B6D11}.auth-dot.ng{background:#A32D2D}
+.auth-info{flex:1;min-width:0}
+.auth-info strong{font-size:13px;display:block}
+.auth-info span{font-size:12px;color:#666}
+.status{font-size:12px;padding:8px 12px;border-radius:8px;margin-top:8px;display:none}
+.status.ok{background:#EAF3DE;color:#3B6D11}
+.status.err{background:#FCEBEB;color:#A32D2D}
+.status.loading{background:#FEF3E7;color:#854F0B}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.month-row{display:grid;grid-template-columns:50px 1fr 80px 70px;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #FEF3E7;font-size:13px}
+.month-hd{display:grid;grid-template-columns:50px 1fr 80px 70px;gap:6px;padding:4px 0 8px;font-size:11px;color:#888;border-bottom:1px solid #F0D9C0}
+.item-sum-row{display:grid;grid-template-columns:1fr 50px 50px 80px;gap:6px;font-size:13px;padding:6px 0;border-bottom:1px solid #FEF3E7}
+.item-sum-hd{display:grid;grid-template-columns:1fr 50px 50px 80px;gap:6px;font-size:11px;color:#888;padding:4px 0 8px;border-bottom:1px solid #F0D9C0}
+.monthly-metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.preset-row{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.suggest-wrap{position:relative;flex:1}
+.suggest-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #F5A84E;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:50;max-height:200px;overflow-y:auto;display:none}
+.suggest-item{padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #FEF3E7}
+.suggest-item:last-child{border-bottom:none}
+.suggest-item:active,.suggest-item.selected{background:#FEF3E7;color:#D97B30}
+.suggest-highlight{font-weight:700;color:#D97B30}
+.sync-bar{background:#E8F4FD;border:1px solid #AECBFA;border-radius:8px;padding:8px 12px;font-size:12px;color:#1a73e8;margin-bottom:10px;display:none;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div style="font-size:48px;margin-bottom:12px">🥬</div>
+    <h2>野菜直売所 売上管理</h2>
+    <p>パスワードを入力してください</p>
+    <input type="password" class="login-input" id="pw-input" placeholder="●●●" maxlength="10" onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="login-btn" onclick="checkPw()">入る</button>
+    <div class="login-err" id="login-err">パスワードが違います</div>
+  </div>
+</div>
+
+<div id="main-app">
+<div class="app">
+<header>
+  <h1>🥬 野菜直売所 売上管理</h1>
+  <div class="date-now" id="date-now"></div>
+</header>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('daily')">日次入力</button>
+  <button class="tab" onclick="showTab('monthly')">月次集計</button>
+  <button class="tab" onclick="showTab('period')">期間集計</button>
+</div>
+<div class="content">
+
+<!-- 日次入力 -->
+<div id="tab-daily">
+  <div class="auth-bar">
+    <div class="auth-dot ng" id="auth-dot"></div>
+    <div class="auth-info">
+      <strong id="auth-label">スプレッドシート：未接続</strong>
+      <span id="auth-sub">ログインするとデータが全デバイスで共有されます</span>
+    </div>
+    <button class="btn btn-sheets btn-sm" onclick="signIn()" id="signin-btn">Googleでログイン</button>
+    <button class="btn btn-sm" onclick="signOut()" id="signout-btn" style="display:none">ログアウト</button>
+  </div>
+  <div class="sync-bar" id="sync-bar">🔄 <span id="sync-msg">データを同期中...</span></div>
+
+  <div class="card">
+    <div class="toggle-row">
+      <label class="toggle"><input type="checkbox" id="skip-toggle" onchange="toggleSkip()"><span class="slider"></span></label>
+      <span style="font-size:14px;font-weight:600">出品数を記録し忘れた</span>
+    </div>
+    <div style="font-size:12px;color:#888;margin-top:4px;margin-left:54px">ONにすると品目入力を省略して売上金だけ保存</div>
+  </div>
+  <div class="skip-notice" id="skip-notice">⚠️ スキップ中：売上金のみ記録。理論売上・誤差は計算されません。</div>
+
+  <div class="card">
+    <div class="card-title">日付</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="date" id="entry-date" style="width:160px" onchange="loadDayData(this.value)">
+      <button class="btn btn-sm" id="prev-btn" onclick="copyPrevItems()">前日の品目を引き継ぐ</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">箱の中のお金（枚数を入力）</div>
+    <div class="coin-grid" id="coin-grid"></div>
+    <div class="cash-total-row">
+      <span style="font-size:13px;color:#888">合計</span>
+      <span style="font-size:22px;font-weight:700" id="cash-total">¥0</span>
+    </div>
+  </div>
+
+  <div id="items-section">
+    <div class="card">
+      <div class="card-title">出品した野菜</div>
+      <div class="item-header"><span>品目名</span><span>単価</span><span>出した数</span><span>残った数</span><span></span></div>
+      <div id="items-list"></div>
+      <div class="add-row">
+        <div class="suggest-wrap">
+          <input type="text" id="new-name" placeholder="品目名（例：トマト）" autocomplete="off"
+            oninput="onNameInput(event)" onkeydown="onNameKeyDown(event)" onfocus="onNameInput(event)" onblur="setTimeout(hideSuggest,200)">
+          <div class="suggest-list" id="suggest-list"></div>
+        </div>
+        <input type="number" id="new-price" placeholder="100" min="0" step="10">
+        <input type="number" id="new-qty" placeholder="10" min="0">
+        <input type="number" id="new-left" placeholder="0" min="0">
+        <button class="btn btn-primary" onclick="addItem()" style="padding:6px;font-size:20px;border-radius:8px">+</button>
+      </div>
+      <div class="preset-row" style="justify-content:flex-end">
+        <button class="btn btn-sm" onclick="openPresetManager()" style="background:#FEF3E7;border-color:#F5A84E;color:#B35F00">品目を管理</button>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">理論売上</div><div class="metric-value" id="m-theory">¥0</div><div class="metric-sub">(出数-残数)×単価</div></div>
+      <div class="metric"><div class="metric-label">実際の売上</div><div class="metric-value green" id="m-actual">¥0</div><div class="metric-sub">箱の合計</div></div>
+      <div class="metric"><div class="metric-label">誤差</div><div class="metric-value" id="m-diff">¥0</div><div class="metric-sub">盗難等</div></div>
+      <div class="metric" style="grid-column:1/-1"><div class="metric-label">達成率（理論比）</div><div class="metric-value" id="m-rate">—</div><div class="metric-sub">実際÷理論×100</div></div>
+    </div>
+  </div>
+
+  <div id="skip-actual-section" style="display:none">
+    <div class="metric-grid" style="grid-template-columns:1fr">
+      <div class="metric"><div class="metric-label">実際の売上（箱の合計）</div><div class="metric-value green" id="m-actual-skip">¥0</div></div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn btn-primary" onclick="saveDay()">💾 保存</button>
+    <button class="btn" onclick="clearDay()">リセット</button>
+  </div>
+  <div class="status" id="status-bar"></div>
+</div>
+
+<!-- 月次集計 -->
+<div id="tab-monthly" style="display:none">
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+    <select id="month-select" style="flex:1;font-size:14px;padding:8px 10px"></select>
+    <button class="btn" onclick="loadMonth()">表示</button>
+  </div>
+  <div class="card">
+    <div class="card-title">分配設定</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="number" id="ratio-a" value="60" min="0" max="100" style="width:60px;font-size:15px" oninput="updateLabels()">
+      <span style="font-size:14px">%　／　</span>
+      <span id="ratio-b-show" style="font-size:15px;font-weight:700">40</span>
+      <span style="font-size:14px">%</span>
+    </div>
+  </div>
+  <div class="monthly-metric-grid">
+    <div class="metric" style="grid-column:1/-1"><div class="metric-label">月間売上合計</div><div class="metric-value green" id="mm-total">¥0</div></div>
+    <div class="metric"><div class="metric-label" id="mm-label-a">60%</div><div class="metric-value green" id="mm-a">¥0</div></div>
+    <div class="metric"><div class="metric-label" id="mm-label-b">40%</div><div class="metric-value amber" id="mm-b">¥0</div></div>
+    <div class="metric"><div class="metric-label">累計誤差</div><div class="metric-value red" id="mm-diff">¥0</div></div>
+    <div class="metric"><div class="metric-label">営業日数</div><div class="metric-value" id="mm-days">0日</div></div>
+    <div class="metric" style="grid-column:1/-1"><div class="metric-label">月間達成率（理論比）</div><div class="metric-value" id="mm-rate">—</div><div class="metric-sub">実際÷理論×100</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">日別明細</div>
+    <div class="month-hd"><span>日付</span><span>品目</span><span style="text-align:right">売上</span><span style="text-align:right">誤差</span></div>
+    <div id="month-rows"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">品目別集計</div>
+    <div class="item-sum-hd"><span>品目</span><span style="text-align:right">出数</span><span style="text-align:right">残数</span><span style="text-align:right">売上</span></div>
+    <div id="item-summary"></div>
+  </div>
+</div>
+
+<!-- 期間集計 -->
+<div id="tab-period" style="display:none">
+  <div class="card">
+    <div class="card-title">期間を選択</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <select id="period-from" style="flex:1;font-size:14px;padding:8px 10px"></select>
+      <span style="font-size:14px;color:#888">〜</span>
+      <select id="period-to" style="flex:1;font-size:14px;padding:8px 10px"></select>
+      <button class="btn btn-primary" onclick="calcPeriod()">集計</button>
+    </div>
+    <div class="card-title">印刷する内容を選択</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="checkbox" id="print-total" checked style="width:18px;height:18px;accent-color:#F5A84E"> 合計</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="checkbox" id="print-60" checked style="width:18px;height:18px;accent-color:#F5A84E"> 60%分</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="checkbox" id="print-40" checked style="width:18px;height:18px;accent-color:#F5A84E"> 40%分</label>
+    </div>
+  </div>
+  <div id="period-result" style="display:none">
+    <div class="metric-grid" id="period-metrics"></div>
+    <div class="card">
+      <div class="card-title">月別明細</div>
+      <div id="period-table"></div>
+    </div>
+    <button class="btn btn-primary" onclick="printPeriod()" style="width:100%;padding:12px;font-size:15px">🖨️ 印刷する</button>
+    <button class="btn" onclick="exportCSV()" style="width:100%;padding:12px;font-size:15px;margin-top:8px;background:#1a73e8;color:#fff;border-color:#1a73e8">📥 会計ソフト用CSVをダウンロード</button>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- 品目管理モーダル -->
+<div id="preset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:400px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:16px 20px;border-bottom:1px solid #F0D9C0;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:16px;font-weight:700;color:#D97B30">登録品目の管理</span>
+      <button onclick="closePresetManager()" style="background:none;border:none;font-size:24px;color:#aaa;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div id="preset-manager-list" style="overflow-y:auto;padding:12px 16px;flex:1"></div>
+    <div style="padding:12px 16px;border-top:1px solid #F0D9C0;font-size:12px;color:#888">
+      ※変更はスプレッドシートにも自動反映されます
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const PASSWORD='708';
+const CLIENT_ID='727426247347-8d3ch50r5f0a2g48pkp1hcgtm7o6kbbl.apps.googleusercontent.com';
+const SHEET_ID='1758_t7Mt0mBufvT3Dsh90yVPkcVVOw1q35sg2bgsEK8';
+const SCOPE='https://www.googleapis.com/auth/spreadsheets';
+const DENOMS=[
+  {label:'¥10,000',val:10000},{label:'¥5,000',val:5000},{label:'¥2,000',val:2000},{label:'¥1,000',val:1000},{label:'¥500',val:500},
+  {label:'¥100',val:100},{label:'¥50',val:50},{label:'¥10',val:10},{label:'¥5',val:5},{label:'¥1',val:1}
+];
+// シート列定義: A=日付 B=売上 C=理論売上 D=誤差 E=スキップ F=品目JSON G=更新日時
+let items=[],accessToken=null,tokenClient=null;
+let records=[];
+let presets=JSON.parse(localStorage.getItem('yasai_presets')||'["トマト","きゅうり","なす","ピーマン","じゃがいも","たまねぎ","にんじん","かぼちゃ"]');
+let autoSaveTimer=null;
+
+function checkPw(){
+  if(document.getElementById('pw-input').value===PASSWORD){
+    sessionStorage.setItem('yasai_auth','1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    // DOMが確実に表示されてからbootApp実行
+    setTimeout(bootApp,50);
+  }else{
+    const e=document.getElementById('login-err');
+    e.style.display='block';
+    document.getElementById('pw-input').value='';
+    setTimeout(()=>e.style.display='none',2000);
+  }
+}
+if(sessionStorage.getItem('yasai_auth')==='1'){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  window.addEventListener('load',bootApp);
+}
+
+function bootApp(){
+  document.getElementById('entry-date').value=today();
+  document.getElementById('date-now').textContent=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  buildCoinGrid();populatePresets();renderItems();
+  const s=document.createElement('script');
+  s.src='https://accounts.google.com/gsi/client';
+  s.onload=()=>setTimeout(initGSI,500);
+  document.head.appendChild(s);
+}
+
+function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0')}
+
+function showStatus(msg,type){
+  const el=document.getElementById('status-bar');
+  el.textContent=msg;el.className='status '+type;el.style.display='block';
+  if(type==='ok')setTimeout(()=>el.style.display='none',3000);
+}
+function showSync(msg){
+  const b=document.getElementById('sync-bar');
+  document.getElementById('sync-msg').textContent=msg;
+  b.style.display='flex';
+}
+function hideSync(){document.getElementById('sync-bar').style.display='none'}
+
+// ---- Google認証 ----
+function initGSI(){
+  if(!window.google||!window.google.accounts)return;
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID,scope:SCOPE,
+    callback:(resp)=>{
+      if(resp.error){
+        // prompt:noneで失敗した場合（未ログイン）は何もしない
+        if(resp.error==='interaction_required'||resp.error==='login_required'){return}
+        showStatus('ログインに失敗しました: '+resp.error,'err');return
+      }
+      accessToken=resp.access_token;
+      sessionStorage.setItem('yasai_token',accessToken);
+      setAuthState(true);
+      loadFromSheets();
+    }
+  });
+  // セッションにトークンが残っていれば自動復元
+  const savedToken=sessionStorage.getItem('yasai_token');
+  if(savedToken){
+    accessToken=savedToken;
+    setAuthState(true);
+    loadFromSheets();
+  } else {
+    // サイレントログイン試行（ユーザー操作不要）
+    try{
+      tokenClient.requestAccessToken({prompt:'none'});
+    }catch(e){}
+  }
+}
+function signIn(){if(!tokenClient){showStatus('少し待ってから再試行してください','err');return}tokenClient.requestAccessToken({prompt:'select_account'})}
+function signOut(){
+  if(accessToken)google.accounts.oauth2.revoke(accessToken,()=>{});
+  accessToken=null;
+  sessionStorage.removeItem('yasai_token');
+  setAuthState(false);
+}
+function setAuthState(ok){
+  document.getElementById('auth-dot').className='auth-dot '+(ok?'ok':'ng');
+  document.getElementById('auth-label').textContent='スプレッドシート：'+(ok?'接続済み ✓':'未接続');
+  document.getElementById('auth-sub').textContent=ok?'データを全デバイスで共有中':'ログインするとデータが全デバイスで共有されます';
+  document.getElementById('signin-btn').style.display=ok?'none':'inline-block';
+  document.getElementById('signout-btn').style.display=ok?'inline-block':'none';
+}
+
+// ---- シートからデータ読み込み ----
+async function loadFromSheets(){
+  if(!accessToken)return;
+  showSync('スプレッドシートからデータを読み込み中...');
+  try{
+    // 売上データとプリセット品目を同時に読み込む
+    const [res1,res2]=await Promise.all([
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('シート1!A2:R')}`,{headers:{Authorization:'Bearer '+accessToken}}),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('シート2!A2:A')}`,{headers:{Authorization:'Bearer '+accessToken}})
+    ]);
+    const data1=await res1.json();
+    const data2=await res2.json();
+
+    // 売上データ
+    const rows=data1.values||[];
+    records=rows.filter(r=>r[0]).map(r=>{
+      const coins={};
+      DENOMS.forEach((d,i)=>coins[d.val]=parseInt(r[7+i])||0);
+      return{
+        date:parseSheetDate(r[0]||''),
+        actual:parseInt(r[1])||0,
+        theory:r[2]===''||r[2]===undefined?null:(parseInt(r[2])||0),
+        diff:r[3]===''||r[3]===undefined?null:(parseInt(r[3])||0),
+        skipped:r[4]==='はい',
+        items:safeParseItems(r[5]||''),
+        coins
+      };
+    });
+    records.sort((a,b)=>a.date.localeCompare(b.date));
+
+    // 品目リスト
+    const pRows=data2.values||[];
+    const sheetPresets=pRows.flat().filter(Boolean);
+    if(sheetPresets.length){
+      presets=sheetPresets;
+      localStorage.setItem('yasai_presets',JSON.stringify(presets));
+      populatePresets();
+    }
+
+    hideSync();
+    populateMonthSelect();
+    populatePeriodSelects();
+    loadMonth();
+    // 今日のデータがあれば日次入力に自動反映
+    const todayDate=document.getElementById('entry-date').value;
+    if(todayDate)loadDayData(todayDate);
+    showStatus('✓ データを読み込みました（'+records.length+'件）','ok');
+  }catch(e){
+    hideSync();
+    showStatus('読み込みエラー: '+e.message,'err');
+  }
+}
+
+function safeParseItems(str){
+  try{return JSON.parse(str)||[]}catch{return[]}
+}
+
+function parseSheetDate(val){
+  if(!val)return'';
+  // すでに YYYY-MM-DD 形式ならそのまま返す
+  if(/^\d{4}-\d{2}-\d{2}$/.test(val))return val;
+  // Excelシリアル値（数値）の場合は変換
+  const n=parseInt(val);
+  if(!isNaN(n)&&n>40000){
+    // Excel/Sheetsのシリアル値 → JavaScriptのDate
+    const d=new Date((n-25569)*86400*1000);
+    // UTCで取得してYYYY-MM-DD形式に
+    const y=d.getUTCFullYear();
+    const m=String(d.getUTCMonth()+1).padStart(2,'0');
+    const day=String(d.getUTCDate()).padStart(2,'0');
+    return`${y}-${m}-${day}`;
+  }
+  return val;
+}
+
+// ---- シートに保存 ----
+async function saveToSheets(rec){
+  if(!accessToken)return false;
+  const itemsJson=JSON.stringify(rec.items||[]);
+  const coinVals=DENOMS.map(d=>(rec.coins&&rec.coins[d.val])||0);
+  // 日付を文字列で保存（シングルクォートで数値変換を防ぐ）
+  const dateStr="'"+rec.date;
+  const row=[dateStr,rec.actual,rec.theory===null?'':rec.theory,rec.diff===null?'':rec.diff,rec.skipped?'はい':'いいえ',itemsJson,new Date().toLocaleString('ja-JP'),...coinVals];
+  const lastCol=String.fromCharCode(72+DENOMS.length-1); // H以降
+  try{
+    // 全行のA列を取得して既存行を探す
+    const res=await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('シート1!A:A')}`,
+      {headers:{Authorization:'Bearer '+accessToken}}
+    );
+    const data=await res.json();
+    const rows=data.values||[];
+    const existIdx=rows.findIndex((r,i)=>i>0&&parseSheetDate(r[0])===rec.date);
+    if(existIdx>=0){
+      // 上書き（列範囲をコイン列まで広げる）
+      const range=`シート1!A${existIdx+1}:${lastCol}${existIdx+1}`;
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+        {method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[row]})}
+      );
+    }else{
+      // 新規追加
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('シート1!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+        {method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[row]})}
+      );
+    }
+    return true;
+  }catch(e){console.log('saveToSheets error:',e);return false}
+}
+
+// ---- 日次入力 ----
+function isSkip(){return document.getElementById('skip-toggle').checked}
+function toggleSkip(){
+  const s=isSkip();
+  document.getElementById('items-section').style.display=s?'none':'block';
+  document.getElementById('skip-actual-section').style.display=s?'block':'none';
+  document.getElementById('skip-notice').style.display=s?'block':'none';
+  document.getElementById('prev-btn').style.display=s?'none':'inline-block';
+  if(s)document.getElementById('m-actual-skip').textContent='¥'+getCashTotal().toLocaleString();
+}
+
+function buildCoinGrid(){
+  const g=document.getElementById('coin-grid');g.innerHTML='';
+  DENOMS.forEach(d=>{
+    const col=document.createElement('div');col.className='coin-item';
+    col.innerHTML=`<span class="coin-label">${d.label}</span>
+      <input type="number" id="coin-${d.val}" value="0" min="0" step="1" inputmode="numeric" style="width:100%;text-align:center;font-size:14px;padding:6px 2px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit" oninput="calcCash()">
+      <span class="coin-sub" id="sub-${d.val}">¥0</span>`;
+    g.appendChild(col);
+  });
+}
+function calcCash(){
+  let t=0;
+  DENOMS.forEach(d=>{const n=parseInt(document.getElementById('coin-'+d.val).value)||0;const s=n*d.val;document.getElementById('sub-'+d.val).textContent='¥'+s.toLocaleString();t+=s});
+  document.getElementById('cash-total').textContent='¥'+t.toLocaleString();
+  if(isSkip())document.getElementById('m-actual-skip').textContent='¥'+t.toLocaleString();
+  else recalc();
+  triggerAutoSave();
+}
+function getCashTotal(){return DENOMS.reduce((s,d)=>s+(parseInt(document.getElementById('coin-'+d.val).value)||0)*d.val,0)}
+
+function populatePresets(){
+  // プルダウンは管理用に残す（非表示）
+}
+
+let suggestIndex=-1;
+function onNameInput(e){
+  const val=document.getElementById('new-name').value;
+  const list=document.getElementById('suggest-list');
+  suggestIndex=-1;
+  list.innerHTML='';
+  if(!presets.length){list.style.display='none';return}
+  const filtered=val.trim()===''?presets:presets.filter(function(p){return p.includes(val)||p.toLowerCase().includes(val.toLowerCase())});
+  if(!filtered.length){list.style.display='none';return}
+  filtered.forEach(function(p){
+    const div=document.createElement('div');
+    div.className='suggest-item';
+    if(val.trim()){
+      const idx=p.indexOf(val);
+      if(idx>=0){
+        div.innerHTML=p.slice(0,idx)+'<span class="suggest-highlight">'+p.slice(idx,idx+val.length)+'</span>'+p.slice(idx+val.length);
+      }else{
+        div.textContent=p;
+      }
+    }else{
+      div.textContent=p;
+    }
+    div.addEventListener('mousedown',function(){selectSuggest(p);});
+    list.appendChild(div);
+  });
+  list.style.display='block';
+}
+function onNameKeyDown(e){
+  const list=document.getElementById('suggest-list');
+  const items=list.querySelectorAll('.suggest-item');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();suggestIndex=Math.min(suggestIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('selected',i===suggestIndex))}
+  else if(e.key==='ArrowUp'){e.preventDefault();suggestIndex=Math.max(suggestIndex-1,0);items.forEach((el,i)=>el.classList.toggle('selected',i===suggestIndex))}
+  else if(e.key==='Enter'){
+    if(suggestIndex>=0&&items[suggestIndex]){e.preventDefault();items[suggestIndex].dispatchEvent(new Event('mousedown'))}
+  }
+  else if(e.key==='Escape'){hideSuggest()}
+}
+function selectSuggest(name){
+  document.getElementById('new-name').value=name;
+  hideSuggest();
+  document.getElementById('new-qty').focus();
+}
+function hideSuggest(){
+  const list=document.getElementById('suggest-list');
+  if(list)list.style.display='none';
+  suggestIndex=-1;
+}
+function renderItems(){
+  const list=document.getElementById('items-list');list.innerHTML='';
+  items.forEach((it,i)=>{
+    const div=document.createElement('div');div.className='item-row';
+    div.innerHTML=`<span style="font-size:13px;font-weight:500">${it.name}</span>
+      <input type="number" value="${it.price}" min="0" step="10" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onchange="items[${i}].price=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.qty}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onchange="items[${i}].qty=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.left}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onchange="items[${i}].left=parseInt(this.value)||0;recalc()">
+      <button class="del-btn" onclick="removeItem(${i})">×</button>`;
+    list.appendChild(div);
+  });
+  recalc();
+}
+function addItem(){
+  const n=document.getElementById('new-name').value.trim();if(!n)return;
+  const p=parseInt(document.getElementById('new-price').value)||100;
+  const q=parseInt(document.getElementById('new-qty').value)||0;
+  const l=parseInt(document.getElementById('new-left').value)||0;
+  items.push({name:n,price:p,qty:q,left:l});
+  document.getElementById('new-name').value='';document.getElementById('new-qty').value='';document.getElementById('new-left').value='';
+  if(!presets.includes(n)){
+    presets.push(n);
+    localStorage.setItem('yasai_presets',JSON.stringify(presets));
+    populatePresets();
+    savePresetToSheets(n);
+  }
+  renderItems();
+}
+
+async function savePresetToSheets(name){
+  if(!accessToken)return;
+  try{
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/%E3%82%B7%E3%83%BC%E3%83%882!A:A:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      {method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+       body:JSON.stringify({values:[[name]]})});
+  }catch(e){console.log('品目保存エラー:',e)}
+}
+
+async function syncPresetsToSheets(){
+  if(!accessToken)return;
+  try{
+    // 既存データをクリアしてから全件書き直す
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('シート2!A2:A1000')}:clear`,
+      {method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'}});
+    if(presets.length){
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('シート2!A2')}?valueInputOption=USER_ENTERED`,
+        {method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+         body:JSON.stringify({values:presets.map(p=>[p])})});
+    }
+  }catch(e){console.log('品目同期エラー:',e)}
+}
+
+function openPresetManager(){
+  renderPresetManager();
+  document.getElementById('preset-modal').style.display='flex';
+}
+function closePresetManager(){
+  document.getElementById('preset-modal').style.display='none';
+}
+
+function renderPresetManager(){
+  const list=document.getElementById('preset-manager-list');
+  if(!presets.length){
+    list.innerHTML='<div style="font-size:13px;color:#aaa;padding:8px 0">登録品目がありません</div>';
+    return;
+  }
+  list.innerHTML=presets.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #FEF3E7" id="preset-row-${i}">
+      <input type="text" value="${p}" id="preset-edit-${i}" style="flex:1;font-size:14px;padding:6px 10px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit">
+      <button onclick="savePresetEdit(${i})" style="padding:6px 12px;font-size:13px;font-weight:600;border:1px solid #F5A84E;border-radius:8px;cursor:pointer;background:#FEF3E7;color:#B35F00;font-family:inherit;white-space:nowrap">保存</button>
+      <button onclick="deletePreset(${i})" style="padding:6px 10px;font-size:13px;font-weight:600;border:1px solid #E0C8A8;border-radius:8px;cursor:pointer;background:#fff;color:#A32D2D;font-family:inherit">削除</button>
+    </div>`).join('');
+}
+
+function savePresetEdit(i){
+  const newName=document.getElementById('preset-edit-'+i).value.trim();
+  if(!newName){alert('品目名を入力してください');return}
+  presets[i]=newName;
+  localStorage.setItem('yasai_presets',JSON.stringify(presets));
+  populatePresets();
+  syncPresetsToSheets();
+  renderPresetManager();
+  showStatus('✓ 品目名を変更しました','ok');
+}
+
+function deletePreset(i){
+  const name=presets[i];
+  if(!confirm(name+'を削除しますか？')){return}
+  presets.splice(i,1);
+  localStorage.setItem('yasai_presets',JSON.stringify(presets));
+  populatePresets();
+  syncPresetsToSheets();
+  renderPresetManager();
+  showStatus('✓ '+name+'を削除しました','ok');
+}
+function addPreset(){const v=document.getElementById('preset-select').value;if(!v||items.find(it=>it.name===v))return;items.push({name:v,price:100,qty:0,left:0});renderItems()}
+function removeItem(i){items.splice(i,1);renderItems()}
+async function loadDayData(date){
+  if(!date)return;
+  // スプレッドシートから最新データを再読み込みしてから表示
+  if(accessToken){
+    try{
+      const res=await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent('シート1!A:R')}`,
+        {headers:{Authorization:'Bearer '+accessToken}}
+      );
+      const data=await res.json();
+      const rows=(data.values||[]).slice(1).filter(r=>r[0]);
+      records=rows.map(r=>{
+        const coins={};
+        DENOMS.forEach((d,i)=>coins[d.val]=parseInt(r[7+i])||0);
+        return{
+          date:parseSheetDate(r[0]||''),
+          actual:parseInt(r[1])||0,
+          theory:r[2]===''||r[2]===undefined?null:(parseInt(r[2])||0),
+          diff:r[3]===''||r[3]===undefined?null:(parseInt(r[3])||0),
+          skipped:r[4]==='はい',
+          items:safeParseItems(r[5]||''),
+          coins
+        };
+      });
+      records.sort((a,b)=>a.date.localeCompare(b.date));
+      populateMonthSelect();
+      populatePeriodSelects();
+    }catch(e){console.log('再読み込みエラー:',e)}
+  }
+  const rec=records.find(r=>r.date===date);
+  if(!rec){
+    // その日のデータなし → 入力欄をリセット
+    items=[];
+    DENOMS.forEach(d=>{
+      document.getElementById('coin-'+d.val).value=0;
+      document.getElementById('sub-'+d.val).textContent='¥0';
+    });
+    document.getElementById('cash-total').textContent='¥0';
+    document.getElementById('skip-toggle').checked=false;
+    toggleSkip();
+    renderItems();
+    return;
+  }
+  // 品目を復元
+  items=JSON.parse(JSON.stringify(rec.items||[]));
+  // スキップ状態を復元
+  document.getElementById('skip-toggle').checked=!!rec.skipped;
+  toggleSkip();
+  // コイン枚数を復元
+  DENOMS.forEach(d=>{
+    const n=(rec.coins&&rec.coins[d.val])||0;
+    document.getElementById('coin-'+d.val).value=n;
+    document.getElementById('sub-'+d.val).textContent='¥'+(n*d.val).toLocaleString();
+  });
+  document.getElementById('cash-total').textContent='¥'+rec.actual.toLocaleString();
+  renderItems();
+  showStatus('✓ '+date+' のデータを読み込みました','ok');
+}
+
+function copyPrevItems(){
+  if(!records.length){alert('保存済みの記録がありません');return}
+  const sorted=[...records].sort((a,b)=>b.date.localeCompare(a.date));
+  items=sorted[0].items.map(it=>({name:it.name,price:it.price,qty:0,left:0}));renderItems();
+}
+function recalc(){
+  const theory=items.reduce((s,it)=>s+(it.qty-it.left)*it.price,0);
+  const actual=getCashTotal();const diff=theory-actual;
+  document.getElementById('m-theory').textContent='¥'+theory.toLocaleString();
+  document.getElementById('m-actual').textContent='¥'+actual.toLocaleString();
+  const dEl=document.getElementById('m-diff');
+  dEl.textContent=(diff>0?'-':'')+'¥'+Math.abs(diff).toLocaleString();
+  dEl.className='metric-value '+(diff>0?'red':diff<0?'green':'');
+  const rEl=document.getElementById('m-rate');
+  if(theory>0){
+    const rate=Math.round(actual/theory*100);
+    rEl.textContent=rate+'%';
+    rEl.className='metric-value '+(rate>=100?'green':rate>=80?'amber':'red');
+  }else{
+    rEl.textContent='—';
+    rEl.className='metric-value';
+  }
+  triggerAutoSave();
+}
+
+function triggerAutoSave(){
+  if(autoSaveTimer)clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>autoSave(),3000);
+}
+
+async function autoSave(){
+  // 品目もコインも何も入力されていない場合はスキップ
+  const actual=getCashTotal();
+  const hasItems=items.length>0;
+  if(!hasItems&&actual===0)return;
+  await saveDay(true);
+}
+
+async function saveDay(isAuto=false){
+  const date=document.getElementById('entry-date').value;
+  const actual=getCashTotal();const skip=isSkip();
+  const theory=skip?null:items.reduce((s,it)=>s+(it.qty-it.left)*it.price,0);
+  const coins={};DENOMS.forEach(d=>coins[d.val]=parseInt(document.getElementById('coin-'+d.val).value)||0);
+  const rec={date,actual,theory,diff:skip?null:(theory-actual),items:skip?[]:JSON.parse(JSON.stringify(items)),skipped:skip,coins};
+  const idx=records.findIndex(r=>r.date===date);
+  if(idx>=0)records[idx]=rec;else records.push(rec);
+  records.sort((a,b)=>a.date.localeCompare(b.date));
+  populateMonthSelect();populatePeriodSelects();
+
+  if(accessToken){
+    if(!isAuto)showStatus('保存中...','loading');
+    const ok=await saveToSheets(rec);
+    showStatus(ok?(isAuto?'🔄 自動保存しました':'✓ 保存しました（スプレッドシートにも反映）'):'⚠️ スプレッドシートへの保存に失敗しました。',ok?'ok':'err');
+  }else{
+    showStatus(isAuto?'🔄 自動保存しました（ローカル）':'✓ 保存しました（Googleログインするとスプレッドシートにも保存されます）','ok');
+  }
+}
+
+function clearDay(){
+  items=[];
+  DENOMS.forEach(d=>{document.getElementById('coin-'+d.val).value=0;document.getElementById('sub-'+d.val).textContent='¥0'});
+  document.getElementById('cash-total').textContent='¥0';
+  document.getElementById('skip-toggle').checked=false;toggleSkip();renderItems();
+}
+
+// ---- 月次集計 ----
+function updateLabels(){
+  const ra=parseInt(document.getElementById('ratio-a').value)||60;
+  document.getElementById('ratio-b-show').textContent=100-ra;
+  document.getElementById('mm-label-a').textContent=ra+'%';
+  document.getElementById('mm-label-b').textContent=(100-ra)+'%';
+  const total=parseInt((document.getElementById('mm-total').textContent||'0').replace(/[¥,]/g,''))||0;
+  document.getElementById('mm-a').textContent='¥'+Math.round(total*ra/100).toLocaleString();
+  document.getElementById('mm-b').textContent='¥'+Math.round(total*(100-ra)/100).toLocaleString();
+}
+function populateMonthSelect(){
+  const sel=document.getElementById('month-select');
+  const months=[...new Set(records.map(r=>r.date.slice(0,7)))].sort().reverse();
+  sel.innerHTML=months.map(m=>`<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+  if(!months.length)sel.innerHTML='<option>記録なし</option>';
+}
+function loadMonth(){
+  const m=document.getElementById('month-select').value;if(!m)return;
+  const recs=records.filter(r=>r.date.startsWith(m));
+  const total=recs.reduce((s,r)=>s+r.actual,0);
+  const diffTotal=recs.reduce((s,r)=>s+(r.diff||0),0);
+  const ra=parseInt(document.getElementById('ratio-a').value)||60;
+  const theoryTotal=recs.reduce((s,r)=>s+(r.theory||0),0);
+  document.getElementById('mm-total').textContent='¥'+total.toLocaleString();
+  document.getElementById('mm-a').textContent='¥'+Math.round(total*ra/100).toLocaleString();
+  document.getElementById('mm-b').textContent='¥'+Math.round(total*(100-ra)/100).toLocaleString();
+  document.getElementById('mm-diff').textContent='¥'+diffTotal.toLocaleString();
+  document.getElementById('mm-days').textContent=recs.length+'日';
+  document.getElementById('mm-label-a').textContent=ra+'%';
+  document.getElementById('mm-label-b').textContent=(100-ra)+'%';
+  const mmREl=document.getElementById('mm-rate');
+  if(theoryTotal>0){
+    const rate=Math.round(total/theoryTotal*100);
+    mmREl.textContent=rate+'%';
+    mmREl.className='metric-value '+(rate>=100?'green':rate>=80?'amber':'red');
+  }else{
+    mmREl.textContent='—';
+    mmREl.className='metric-value';
+  }
+  document.getElementById('month-rows').innerHTML=recs.length?recs.slice().reverse().map(r=>{
+    const names=r.skipped?'（スキップ）':r.items.map(it=>it.name).join('・').slice(0,16)||'—';
+    const dStr=r.skipped?'—':(r.diff>0?'-':'')+'¥'+Math.abs(r.diff).toLocaleString();
+    const dClass=r.skipped?'':r.diff>200?'red':r.diff>0?'amber':'green';
+    return`<div class="month-row"><span style="color:#888">${r.date.slice(5).replace('-','/')}</span><span style="font-size:12px;${r.skipped?'color:#aaa':''}">${names}</span><span style="text-align:right;font-weight:600">¥${r.actual.toLocaleString()}</span><span style="text-align:right" class="${dClass}">${dStr}</span></div>`;
+  }).join(''):'<div style="font-size:13px;color:#aaa;padding:8px 0">記録がありません</div>';
+  const itemMap={};
+  recs.filter(r=>!r.skipped).forEach(r=>r.items.forEach(it=>{
+    if(!itemMap[it.name])itemMap[it.name]={qty:0,left:0,revenue:0};
+    itemMap[it.name].qty+=it.qty;itemMap[it.name].left+=it.left;
+    itemMap[it.name].revenue+=(it.qty-it.left)*it.price;
+  }));
+  const entries=Object.entries(itemMap).sort((a,b)=>b[1].revenue-a[1].revenue);
+  document.getElementById('item-summary').innerHTML=entries.length
+    ?entries.map(([name,v])=>`<div class="item-sum-row"><span>${name}</span><span style="text-align:right">${v.qty}</span><span style="text-align:right">${v.left}</span><span style="text-align:right;font-weight:600">¥${v.revenue.toLocaleString()}</span></div>`).join('')
+    :'<div style="font-size:13px;color:#aaa">品目データなし</div>';
+}
+
+// ---- 期間集計 ----
+function populatePeriodSelects(){
+  const months=[...new Set(records.map(r=>r.date.slice(0,7)))].sort();
+  const opts=months.map(m=>`<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+  const optsR=months.slice().reverse().map(m=>`<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+  document.getElementById('period-from').innerHTML=opts||'<option value="">記録なし</option>';
+  document.getElementById('period-to').innerHTML=optsR||'<option value="">記録なし</option>';
+}
+function getMonthRange(from,to){
+  const months=[];let cur=from;
+  while(cur<=to){months.push(cur);const[y,m]=cur.split('-').map(Number);cur=m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`}
+  return months;
+}
+function calcPeriod(){
+  const from=document.getElementById('period-from').value;
+  const to=document.getElementById('period-to').value;
+  if(!from||!to){alert('期間を選択してください');return}
+  if(from>to){alert('開始月は終了月より前にしてください');return}
+  const ra=parseInt(document.getElementById('ratio-a').value)||60;
+  const rb=100-ra;
+  const monthData=getMonthRange(from,to).map(m=>{
+    const recs=records.filter(r=>r.date.startsWith(m));
+    const total=recs.reduce((s,r)=>s+r.actual,0);
+    return{month:m,total,days:recs.length,a:Math.round(total*ra/100),b:Math.round(total*rb/100)};
+  });
+  const gTotal=monthData.reduce((s,d)=>s+d.total,0);
+  const gA=Math.round(gTotal*ra/100),gB=Math.round(gTotal*rb/100);
+  document.getElementById('period-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">期間合計売上</div><div class="metric-value green">¥${gTotal.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">${ra}%分</div><div class="metric-value green">¥${gA.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">${rb}%分</div><div class="metric-value amber">¥${gB.toLocaleString()}</div></div>`;
+  document.getElementById('period-table').innerHTML=`
+    <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 40px;gap:6px;font-size:11px;color:#888;padding:4px 0 8px;border-bottom:1px solid #F0D9C0">
+      <span>月</span><span style="text-align:right">合計</span><span style="text-align:right">${ra}%</span><span style="text-align:right">${rb}%</span><span style="text-align:right">日数</span></div>
+    ${monthData.map(d=>`<div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 40px;gap:6px;font-size:13px;padding:7px 0;border-bottom:1px solid #FEF3E7">
+      <span style="color:#888">${d.month.replace('-','年')}月</span>
+      <span style="text-align:right;font-weight:600">¥${d.total.toLocaleString()}</span>
+      <span style="text-align:right;color:#3B6D11">¥${d.a.toLocaleString()}</span>
+      <span style="text-align:right;color:#854F0B">¥${d.b.toLocaleString()}</span>
+      <span style="text-align:right;color:#888">${d.days}日</span></div>`).join('')}
+    <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 40px;gap:6px;font-size:13px;padding:8px 0;border-top:2px solid #F0D9C0;font-weight:700">
+      <span>合計</span><span style="text-align:right">¥${gTotal.toLocaleString()}</span>
+      <span style="text-align:right;color:#3B6D11">¥${gA.toLocaleString()}</span>
+      <span style="text-align:right;color:#854F0B">¥${gB.toLocaleString()}</span>
+      <span style="text-align:right;color:#888">${monthData.reduce((s,d)=>s+d.days,0)}日</span></div>`;
+  document.getElementById('period-result').style.display='block';
+}
+function printPeriod(){
+  const from=document.getElementById('period-from').value;
+  const to=document.getElementById('period-to').value;
+  const ra=parseInt(document.getElementById('ratio-a').value)||60;
+  const rb=100-ra;
+  const showTotal=document.getElementById('print-total').checked;
+  const show60=document.getElementById('print-60').checked;
+  const show40=document.getElementById('print-40').checked;
+  const monthData=getMonthRange(from,to).map(m=>{
+    const recs=records.filter(r=>r.date.startsWith(m));
+    const total=recs.reduce((s,r)=>s+r.actual,0);
+    return{month:m,total,days:recs.length,a:Math.round(total*ra/100),b:Math.round(total*rb/100)};
+  });
+  const gTotal=monthData.reduce((s,d)=>s+d.total,0);
+  const gA=Math.round(gTotal*ra/100),gB=Math.round(gTotal*rb/100);
+  const cols=[];
+  if(showTotal)cols.push({label:'合計売上',key:'total',grand:gTotal,color:''});
+  if(show60)cols.push({label:ra+'%分',key:'a',grand:gA,color:'#3B6D11'});
+  if(show40)cols.push({label:rb+'%分',key:'b',grand:gB,color:'#854F0B'});
+  if(!cols.length){alert('印刷する内容を1つ以上選択してください');return}
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>期間集計</title>
+  <style>body{font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','YuGothic',sans-serif;padding:24px;color:#333;font-size:13px}
+  h2{font-size:18px;font-weight:700;margin-bottom:4px;color:#D97B30}.sub{font-size:12px;color:#888;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse}th{background:#F5A84E;color:#fff;padding:8px 10px;text-align:right}th:first-child{text-align:left}
+  td{padding:7px 10px;border-bottom:1px solid #eee;text-align:right}td:first-child{text-align:left;color:#555}
+  .foot td{font-weight:700;border-top:2px solid #F5A84E;border-bottom:none}@media print{body{padding:8px}}</style></head><body>
+  <h2>🥬 野菜直売所 売上集計</h2>
+  <div class="sub">${from.replace('-','年')}月 〜 ${to.replace('-','年')}月　印刷日: ${new Date().toLocaleDateString('ja-JP')}</div>
+  <table><tr><th>月</th>${cols.map(c=>`<th>${c.label}</th>`).join('')}<th>営業日数</th></tr>
+  ${monthData.map(d=>`<tr><td>${d.month.replace('-','年')}月</td>${cols.map(c=>`<td style="${c.color?'color:'+c.color:''}">¥${d[c.key].toLocaleString()}</td>`).join('')}<td>${d.days}日</td></tr>`).join('')}
+  <tr class="foot"><td>合計</td>${cols.map(c=>`<td style="${c.color?'color:'+c.color:''}">¥${c.grand.toLocaleString()}</td>`).join('')}<td>${monthData.reduce((s,d)=>s+d.days,0)}日</td></tr>
+  </table><script>window.onload=()=>window.print()<\/script></body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+// ---- CSVエクスポート ----
+function exportCSV(){
+  const from=document.getElementById('period-from').value;
+  const to=document.getElementById('period-to').value;
+  if(!from||!to){alert('期間を選択してから「集計」ボタンを押してください');return}
+
+  const months=getMonthRange(from,to);
+  const rows=[];
+
+  // ヘッダー行
+  rows.push(['date','sales_cash','sales_extra_name','sales_extra_amount','memo']);
+
+  months.forEach(m=>{
+    const [y,mo]=m.split('-').map(Number);
+    const daysInMonth=new Date(y,mo,0).getDate();
+    for(let d=1;d<=daysInMonth;d++){
+      const dateStr=`${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const rec=records.find(r=>r.date===dateStr);
+      const sales=rec?rec.actual:0;
+      rows.push([dateStr,sales,'','','']);
+    }
+  });
+
+  // UTF-8 BOM付きCSV生成
+  const bom='﻿';
+  const csv=bom+rows.map(r=>r.map(v=>{
+    const s=String(v);
+    // カンマや改行を含む場合はダブルクォートで囲む
+    return s.includes(',')||s.includes('
+')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;
+  }).join(',')).join('
+');
+
+  // ダウンロード
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`sales_${from}${from===to?'':('_to_'+to)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---- タブ切替 ----
+function showTab(t){
+  ['daily','monthly','period'].forEach(id=>document.getElementById('tab-'+id).style.display=t===id?'block':'none');
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['daily','monthly','period'][i]===t));
+  if(t==='monthly'){populateMonthSelect();loadMonth()}
+  if(t==='period')populatePeriodSelects();
+}
+</script>
+</body>
+</html>
