@@ -503,12 +503,19 @@ function toggleSkip(){
   if(s)document.getElementById('m-actual-skip').textContent='¥'+getCashTotal().toLocaleString();
 }
 
+function clearIfZero(el){
+  if(el.value==='0'||el.value===0)el.value='';
+}
+function restoreIfEmpty(el){
+  if(el.value===''||el.value===null)el.value='0';
+}
+
 function buildCoinGrid(){
   const g=document.getElementById('coin-grid');g.innerHTML='';
   DENOMS.forEach(d=>{
     const col=document.createElement('div');col.className='coin-item';
     col.innerHTML=`<span class="coin-label">${d.label}</span>
-      <input type="number" id="coin-${d.val}" value="0" min="0" step="1" inputmode="numeric" style="width:100%;text-align:center;font-size:14px;padding:6px 2px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit" oninput="calcCash()">
+      <input type="number" id="coin-${d.val}" value="0" min="0" step="1" inputmode="numeric" style="width:100%;text-align:center;font-size:14px;padding:6px 2px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit" oninput="calcCash()" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);calcCash()">
       <span class="coin-sub" id="sub-${d.val}">¥0</span>`;
     g.appendChild(col);
   });
@@ -580,9 +587,9 @@ function renderItems(){
   items.forEach((it,i)=>{
     const div=document.createElement('div');div.className='item-row';
     div.innerHTML=`<span style="font-size:13px;font-weight:500">${it.name}</span>
-      <input type="number" value="${it.price}" min="0" step="10" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onchange="items[${i}].price=parseInt(this.value)||0;recalc()">
-      <input type="number" value="${it.qty}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onchange="items[${i}].qty=parseInt(this.value)||0;recalc()">
-      <input type="number" value="${it.left}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onchange="items[${i}].left=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.price}" min="0" step="10" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].price=parseInt(this.value)||0;recalc()" onchange="items[${i}].price=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.qty}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].qty=parseInt(this.value)||0;recalc()" onchange="items[${i}].qty=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.left}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].left=parseInt(this.value)||0;recalc()" onchange="items[${i}].left=parseInt(this.value)||0;recalc()">
       <button class="del-btn" onclick="removeItem(${i})">×</button>`;
     list.appendChild(div);
   });
