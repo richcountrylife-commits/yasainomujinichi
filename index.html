@@ -955,14 +955,15 @@ function exportCSV(){
   });
 
   // UTF-8 BOM付きCSV生成
-  const bom='﻿';
-  const csv=bom+rows.map(r=>r.map(v=>{
-    const s=String(v);
-    // カンマや改行を含む場合はダブルクォートで囲む
-    return s.includes(',')||s.includes('
-')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;
-  }).join(',')).join('
-');
+  const bom='\uFEFF';
+  const NL='\r\n';
+  const csv=bom+rows.map(function(r){
+    return r.map(function(v){
+      var s=String(v);
+      var q=s.indexOf(',')>=0||s.indexOf('\n')>=0||s.indexOf('"')>=0;
+      return q?'"'+s.split('"').join('""')+'"':s;
+    }).join(',');
+  }).join(NL);
 
   // ダウンロード
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
