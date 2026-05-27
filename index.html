@@ -32,7 +32,7 @@ header .date-now{font-size:12px;color:rgba(255,255,255,0.85)}
 .metric-value{font-size:19px;font-weight:700;line-height:1}
 .metric-sub{font-size:10px;color:#aaa;margin-top:3px}
 .green{color:#3B6D11}.red{color:#A32D2D}.amber{color:#854F0B}
-input[type=text],input[type=number],input[type=date],select{font-size:15px;padding:8px 10px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;width:100%;font-family:inherit;-webkit-appearance:none}
+input[type=text],input[type=number],input[type=date],select{font-size:16px;padding:8px 10px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;width:100%;font-family:inherit;-webkit-appearance:none}
 input:focus,select:focus{outline:none;border-color:#F5A84E}
 .btn{padding:10px 16px;font-size:14px;font-weight:600;border:1px solid #E0C8A8;border-radius:8px;cursor:pointer;background:#fff;color:#3D3D3D;font-family:inherit;transition:all .15s}
 .btn:active{transform:scale(0.97)}
@@ -198,13 +198,13 @@ input:checked+.slider:before{transform:translateX(20px)}
 <!-- 月次集計 -->
 <div id="tab-monthly" style="display:none">
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-    <select id="month-select" style="flex:1;font-size:14px;padding:8px 10px"></select>
+    <select id="month-select" style="flex:1;font-size:16px;padding:8px 10px"></select>
     <button class="btn" onclick="loadMonth()">表示</button>
   </div>
   <div class="card">
     <div class="card-title">分配設定</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <input type="number" id="ratio-a" value="60" min="0" max="100" style="width:60px;font-size:15px" oninput="updateLabels()">
+      <input type="number" id="ratio-a" value="60" min="0" max="100" style="width:60px;font-size:16px" oninput="updateLabels()">
       <span style="font-size:14px">%　／　</span>
       <span id="ratio-b-show" style="font-size:15px;font-weight:700">40</span>
       <span style="font-size:14px">%</span>
@@ -235,9 +235,9 @@ input:checked+.slider:before{transform:translateX(20px)}
   <div class="card">
     <div class="card-title">期間を選択</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-      <select id="period-from" style="flex:1;font-size:14px;padding:8px 10px"></select>
+      <select id="period-from" style="flex:1;font-size:16px;padding:8px 10px"></select>
       <span style="font-size:14px;color:#888">〜</span>
-      <select id="period-to" style="flex:1;font-size:14px;padding:8px 10px"></select>
+      <select id="period-to" style="flex:1;font-size:16px;padding:8px 10px"></select>
       <button class="btn btn-primary" onclick="calcPeriod()">集計</button>
     </div>
     <div class="card-title">印刷する内容を選択</div>
@@ -515,7 +515,7 @@ function buildCoinGrid(){
   DENOMS.forEach(d=>{
     const col=document.createElement('div');col.className='coin-item';
     col.innerHTML=`<span class="coin-label">${d.label}</span>
-      <input type="number" id="coin-${d.val}" value="0" min="0" step="1" inputmode="numeric" style="width:100%;text-align:center;font-size:14px;padding:6px 2px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit" oninput="calcCash()" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);calcCash()">
+      <input type="number" id="coin-${d.val}" value="0" min="0" step="1" inputmode="numeric" style="width:100%;text-align:center;font-size:16px;padding:6px 2px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit" oninput="calcCash()" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);calcCash()">
       <span class="coin-sub" id="sub-${d.val}">¥0</span>`;
     g.appendChild(col);
   });
@@ -587,9 +587,9 @@ function renderItems(){
   items.forEach((it,i)=>{
     const div=document.createElement('div');div.className='item-row';
     div.innerHTML=`<span style="font-size:13px;font-weight:500">${it.name}</span>
-      <input type="number" value="${it.price}" min="0" step="10" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].price=parseInt(this.value)||0;recalc()" onchange="items[${i}].price=parseInt(this.value)||0;recalc()">
-      <input type="number" value="${it.qty}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].qty=parseInt(this.value)||0;recalc()" onchange="items[${i}].qty=parseInt(this.value)||0;recalc()">
-      <input type="number" value="${it.left}" min="0" inputmode="numeric" style="font-size:13px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].left=parseInt(this.value)||0;recalc()" onchange="items[${i}].left=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.price}" min="0" step="10" inputmode="numeric" style="font-size:16px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].price=parseInt(this.value)||0;recalc()" onchange="items[${i}].price=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.qty}" min="0" inputmode="numeric" style="font-size:16px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].qty=parseInt(this.value)||0;recalc()" onchange="items[${i}].qty=parseInt(this.value)||0;recalc()">
+      <input type="number" value="${it.left}" min="0" inputmode="numeric" style="font-size:16px;padding:5px 4px;border:1px solid #E0C8A8;border-radius:6px;background:#fff;color:#3D3D3D;font-family:inherit;width:100%;text-align:center" onfocus="clearIfZero(this)" onblur="restoreIfEmpty(this);items[${i}].left=parseInt(this.value)||0;recalc()" onchange="items[${i}].left=parseInt(this.value)||0;recalc()">
       <button class="del-btn" onclick="removeItem(${i})">×</button>`;
     list.appendChild(div);
   });
@@ -650,7 +650,7 @@ function renderPresetManager(){
   }
   list.innerHTML=presets.map((p,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #FEF3E7" id="preset-row-${i}">
-      <input type="text" value="${p}" id="preset-edit-${i}" style="flex:1;font-size:14px;padding:6px 10px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit">
+      <input type="text" value="${p}" id="preset-edit-${i}" style="flex:1;font-size:16px;padding:6px 10px;border:1px solid #E0C8A8;border-radius:8px;background:#fff;color:#3D3D3D;font-family:inherit">
       <button onclick="savePresetEdit(${i})" style="padding:6px 12px;font-size:13px;font-weight:600;border:1px solid #F5A84E;border-radius:8px;cursor:pointer;background:#FEF3E7;color:#B35F00;font-family:inherit;white-space:nowrap">保存</button>
       <button onclick="deletePreset(${i})" style="padding:6px 10px;font-size:13px;font-weight:600;border:1px solid #E0C8A8;border-radius:8px;cursor:pointer;background:#fff;color:#A32D2D;font-family:inherit">削除</button>
     </div>`).join('');
