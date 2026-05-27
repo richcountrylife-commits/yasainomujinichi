@@ -136,8 +136,12 @@ input:checked+.slider:before{transform:translateX(20px)}
   <div class="card">
     <div class="card-title">日付</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <input type="date" id="entry-date" style="width:160px" onchange="loadDayData(this.value)">
-      <button class="btn btn-sm" id="prev-btn" onclick="copyPrevItems()">前日の品目を引き継ぐ</button>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="moveDate(-1)" style="font-size:16px;padding:6px 12px">◀</button>
+        <input type="date" id="entry-date" style="width:150px" onchange="loadDayData(this.value)">
+        <button class="btn btn-sm" onclick="moveDate(1)" style="font-size:16px;padding:6px 12px">▶</button>
+        <button class="btn btn-sm" id="prev-btn" onclick="copyPrevItems()" style="font-size:12px">前日の品目を引き継ぐ</button>
+      </div>
     </div>
   </div>
 
@@ -668,6 +672,19 @@ function deletePreset(i){
 }
 function addPreset(){const v=document.getElementById('preset-select').value;if(!v||items.find(it=>it.name===v))return;items.push({name:v,price:100,qty:0,left:0});renderItems()}
 function removeItem(i){items.splice(i,1);renderItems()}
+function moveDate(diff){
+  const input=document.getElementById('entry-date');
+  const current=input.value||today();
+  const d=new Date(current);
+  d.setDate(d.getDate()+diff);
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  const newDate=y+'-'+m+'-'+day;
+  input.value=newDate;
+  loadDayData(newDate);
+}
+
 async function loadDayData(date){
   if(!date)return;
   // スプレッドシートから最新データを再読み込みしてから表示
@@ -814,7 +831,10 @@ function loadMonth(){
   const total=recs.reduce((s,r)=>s+r.actual,0);
   const diffTotal=recs.reduce((s,r)=>s+(r.diff||0),0);
   const ra=parseInt(document.getElementById('ratio-a').value)||60;
-  const theoryTotal=recs.reduce((s,r)=>s+(r.theory||0),0);
+  // 達成率計算はスキップしていない日だけで計算
+  const rateRecs=recs.filter(r=>!r.skipped);
+  const theoryTotal=rateRecs.reduce((s,r)=>s+(r.theory||0),0);
+  const actualTotal=rateRecs.reduce((s,r)=>s+r.actual,0);
   document.getElementById('mm-total').textContent='¥'+total.toLocaleString();
   document.getElementById('mm-a').textContent='¥'+Math.round(total*ra/100).toLocaleString();
   document.getElementById('mm-b').textContent='¥'+Math.round(total*(100-ra)/100).toLocaleString();
@@ -824,7 +844,7 @@ function loadMonth(){
   document.getElementById('mm-label-b').textContent=(100-ra)+'%';
   const mmREl=document.getElementById('mm-rate');
   if(theoryTotal>0){
-    const rate=Math.round(total/theoryTotal*100);
+    const rate=Math.round(actualTotal/theoryTotal*100);
     mmREl.textContent=rate+'%';
     mmREl.className='metric-value '+(rate>=100?'green':rate>=80?'amber':'red');
   }else{
